@@ -1,7 +1,6 @@
 package main
 
 import (
-
 	"fmt"
 	"os"
 	"os/signal"
@@ -13,8 +12,8 @@ import (
 	"strings"
 )
 
-var DirPath = make([]string,0)
-var Suffixs = make([]string,0)
+var DirPath = make([]string, 0)
+var Suffixs = make([]string, 0)
 var verbose = true
 
 func main() {
@@ -22,31 +21,31 @@ func main() {
 	loadConfig("config.json")
 	parseCommandLine()
 
-	fc := make(chan *disk_spider.File,100)
-	exit := make(chan os.Signal,1)
+	fc := make(chan *disk_spider.File, 100)
+	exit := make(chan os.Signal, 1)
 
-	if len(DirPath)>0 == false {
+	if len(DirPath) > 0 == false {
 		Println("[no target dir]")
 		os.Exit(0)
 	}
 
 	go func() {
-		for _,v:=range DirPath {
-			disk_spider.WalkDirToChan(v,Suffixs,fc)
+		for _, v := range DirPath {
+			disk_spider.WalkDirToChan(v, Suffixs, fc)
 		}
 
 	}()
 
-
-
 	go func() {
-		arch,err := disk_spider.NewArchiver("arc.x")
+		arch, err := disk_spider.NewArchiver("arc.x")
+
 		if err != nil {
 			Println("[can not create archive file]")
 			os.Exit(1)
 		}
+
 		for {
-			f:=<-fc
+			f := <-fc
 
 			if f == nil {
 				return
@@ -55,16 +54,16 @@ func main() {
 
 			arch.Archive(f)
 
-
 		}
+		arch.Finish()
 	}()
-	signal.Notify(exit,os.Interrupt,os.Kill)
+	signal.Notify(exit, os.Interrupt, os.Kill)
 	<-exit
 
 	Println("finish")
 }
 
-func Println(v... interface{}) {
+func Println(v ... interface{}) {
 	if verbose {
 		fmt.Println(v)
 	}
@@ -72,37 +71,35 @@ func Println(v... interface{}) {
 
 func loadConfig(jsonPath string) {
 
-	b,err:=ioutil.ReadFile(getCurrentDirectory()+"/"+jsonPath)
-	if err!=nil {
-		Println("[config JSON Error]:",err.Error())
+	b, err := ioutil.ReadFile(getCurrentDirectory() + "/" + jsonPath)
+	if err != nil {
+		Println("[config JSON Error]:", err.Error())
 		os.Exit(0)
 	}
 
 	m := make(map[string]interface{})
-	err = json.Unmarshal(b,&m)
-	if err!=nil {
+	err = json.Unmarshal(b, &m)
+	if err != nil {
 		Println("[config JSON Error]")
 		os.Exit(0)
 	}
 
-	if dirPaths,ok:=m["dir_path"].([]interface{});ok {
+	if dirPaths, ok := m["dir_path"].([]interface{}); ok {
 		fmt.Println(dirPaths)
-		for _,v:=range dirPaths {
-			DirPath = append(DirPath,v.(string))
+		for _, v := range dirPaths {
+			DirPath = append(DirPath, v.(string))
 		}
 	}
 
-	if suffixs,ok:=m["suffix"].([]interface{});ok {
-		for _,v:=range suffixs {
-			Suffixs = append(Suffixs,v.(string))
+	if suffixs, ok := m["suffix"].([]interface{}); ok {
+		for _, v := range suffixs {
+			Suffixs = append(Suffixs, v.(string))
 		}
 	}
-
 
 }
 
 func parseCommandLine() {
-
 
 }
 

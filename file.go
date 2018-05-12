@@ -7,15 +7,16 @@ import (
 )
 
 type File struct {
-	Size int64
-	Path string
-	Mode os.FileMode
+	Size     int64
+	Path     string
+	FileName string
+	Mode     os.FileMode
 }
 
-func WalkDirToChan(dirPth string, suffixs []string,c chan *File ) (files []*File, err error) {
+func WalkDirToChan(dirPth string, suffixs []string, c chan *File) (files []*File, err error) {
 
-	files = make([]*File,0)
-	suffix:= suffixs[0]
+	files = make([]*File, 0)
+	suffix := suffixs[0]
 
 	suffix = strings.ToUpper(suffix)
 
@@ -28,14 +29,15 @@ func WalkDirToChan(dirPth string, suffixs []string,c chan *File ) (files []*File
 			return nil
 		}
 
-		f:=&File{
-			Size:fi.Size(),
-			Path:fi.Name(),
-			Mode:fi.Mode(),
+		f := &File{
+			Size:     fi.Size(),
+			Path:     filename,
+			FileName: fi.Name(),
+			Mode:     fi.Mode(),
 		}
 
 		if strings.HasSuffix(strings.ToUpper(fi.Name()), suffix) {
-			c<-f
+			c <- f
 
 			files = append(files, f)
 		}

@@ -3,6 +3,7 @@ package disk_spider
 import (
 	"bytes"
 	"encoding/binary"
+
 )
 
 func bytesCombine(pBytes ...[]byte) []byte {
@@ -24,3 +25,8 @@ func bigEndianPack(len uint32) []byte {
 func appendBigEndian(buff []byte, len uint32) []byte {
 	return bytesCombine(buff, bigEndianPack(len))
 }
+
+func uint32BigEndianBytesToInt(b []byte) int {
+	return int(binary.BigEndian.Uint32(b))
+}
+

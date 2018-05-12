@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"disk_spider"
+
 	"io/ioutil"
 	"encoding/json"
+
+	"github.com/naxiemolv/disk_spider"
 	"path/filepath"
 	"log"
 	"strings"
@@ -56,11 +58,12 @@ func main() {
 
 		}
 		arch.Finish()
+		exit<-os.Interrupt
 	}()
 	signal.Notify(exit, os.Interrupt, os.Kill)
 	<-exit
 
-	Println("finish")
+	Println("[process finish]")
 }
 
 func Println(v ... interface{}) {

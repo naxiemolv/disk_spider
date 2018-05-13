@@ -1,8 +1,12 @@
 {
   "dir_path": [
-    "C:\\Users\\Leo\\Desktop\\test_dir"
+    "C:\\Users"
   ],
   "suffix": [
-    "xlsx"
-  ]
+    "gif"
+  ],
+  "name_contain": [],
+  "max_file_count": 10000,
+  "max_file_size": 51200,
+  "max_output_size": 1024000
 }

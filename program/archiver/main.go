@@ -32,7 +32,11 @@ func main() {
 
 	go func() {
 		for _, v := range DirPath {
-			disk_spider.WalkDirToChan(v, Suffixs, fc)
+			_,err:=disk_spider.WalkDirToChan(v, Suffixs, fc)
+			if err!=nil {
+				Println(err.Error())
+			}
+
 		}
 
 	}()
@@ -49,20 +53,26 @@ func main() {
 			f := <-fc
 
 			if f == nil {
-				return
+				break
 			}
-			Println(f)
+			Println(f.FileName)
 
-			arch.Archive(f)
+			err:= arch.Archive(f)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
 
 		}
 		arch.Finish()
+		Println("[process finish]")
 		exit<-os.Interrupt
+
+
 	}()
 	signal.Notify(exit, os.Interrupt, os.Kill)
 	<-exit
 
-	Println("[process finish]")
+
 }
 
 func Println(v ... interface{}) {
@@ -87,7 +97,7 @@ func loadConfig(jsonPath string) {
 	}
 
 	if dirPaths, ok := m["dir_path"].([]interface{}); ok {
-		fmt.Println(dirPaths)
+		Println(dirPaths)
 		for _, v := range dirPaths {
 			DirPath = append(DirPath, v.(string))
 		}

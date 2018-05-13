@@ -4,19 +4,20 @@ import (
 	"strings"
 	"path/filepath"
 	"os"
+	"fmt"
 )
 
 func WalkDirToChan(dirPth string, suffixs []string, c chan *File) (files []*File, err error) {
 
 	files = make([]*File, 0)
-	suffix := suffixs[0]
-
-	suffix = strings.ToUpper(suffix)
-
+	i:=0
 	err = filepath.Walk(dirPth, func(filename string, fi os.FileInfo, err error) error { //遍历目录
 
 		if err != nil {
-			return err
+			return nil
+		}
+		if fi == nil {
+			return nil
 		}
 		if fi.IsDir() {
 			return nil
@@ -24,15 +25,24 @@ func WalkDirToChan(dirPth string, suffixs []string, c chan *File) (files []*File
 
 		f := &File{
 			Size:     fi.Size(),
-			Path:     filename,
+			FilePath:     filename,
 			FileName: fi.Name(),
 			Mode:     fi.Mode(),
 		}
 
-		if strings.HasSuffix(strings.ToUpper(fi.Name()), suffix) {
-			c <- f
-
-			files = append(files, f)
+		for _, suffix := range suffixs {
+			suffix = strings.ToUpper(suffix)
+			if strings.HasSuffix(strings.ToUpper(fi.Name()), suffix) {
+				i++
+				if i>267 {
+					fmt.Print("1")
+				}
+				f.FilePath = filename
+				fmt.Println(f.FilePath)
+				c <- f
+				files = append(files, f)
+				break
+			}
 		}
 
 		return nil

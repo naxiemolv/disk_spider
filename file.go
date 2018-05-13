@@ -6,7 +6,7 @@ import (
 
 type File struct {
 	Size        int64
-	Path        string
+	FilePath    string
 	FileName    string
 	Mode        os.FileMode
 	File        *os.File
@@ -38,6 +38,7 @@ func parseFileHeader([]byte) (*FileHeader, error) {
 
 func (f *File) serializeBlockHead() ([]byte, error) {
 
+
 	buff := make([]byte, 0)
 
 	buff = appendBigEndian(buff, uint32(f.CurrentTask))
@@ -47,17 +48,19 @@ func (f *File) serializeBlockHead() ([]byte, error) {
 
 		head = appendBigEndian(head, uint32(f.Size))
 
-		fileName := []byte(f.FileName)
+ 		fileName := []byte(f.FileName)
 
 		head = appendBigEndian(head, uint32(len(fileName)))
 
 		head = bytesCombine(head, fileName)
 
-		filePath := []byte(f.Path)
+		filePath := []byte(f.FilePath)
 
-		head = appendBigEndian(head, uint32(len(filePath)))
+
+		head = appendBigEndian(head,uint32(len(filePath)) )
 
 		head = bytesCombine(head, filePath)
+
 
 		buff = appendBigEndian(buff, uint32(len(head)))
 		buff = bytesCombine(buff, head)
@@ -92,7 +95,7 @@ func deserializeBlockHead(head []byte) (f *File, err error) {
 
 	f = &File{
 		Size:     int64(fileSize),
-		Path:     path,
+		FilePath:     path,
 		FileName: fileName,
 	}
 

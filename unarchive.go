@@ -28,11 +28,11 @@ func NewUnArchiver(fileName string) (*UnArchiver, error) {
 	if err != nil {
 		return nil, err
 	}
-	r := bufio.NewReader(f)
+
 	u := &UnArchiver{
 		ArchiveName: fileName,
 		File:        f,
-		Reader:      r,
+		//Reader:      r,
 		MaxHeadSize:65535,
 	}
 	err = u.readFileHead()
@@ -57,7 +57,7 @@ func (unArch *UnArchiver) UnArchive() error {
 
 Read:
 
-	n, err = unArch.Reader.Read(b)
+	n, err = unArch.File.Read(b)
 	if err != nil || n != 4 {
 		return FileError
 	}
@@ -67,7 +67,8 @@ Read:
 		return FileError
 	}
 
-	n, err = unArch.Reader.Read(b)
+
+	n, err = unArch.File.Read(b)
 	if err != nil || n != 4 {
 		return FileError
 	}
@@ -77,9 +78,9 @@ Read:
 		return FileError
 	}
 
-	n, err = unArch.Reader.Read(subHeaderByte)
+	n, err = unArch.File.Read(subHeaderByte)
 	if err != nil || n != headLen {
-		return FileError
+		fmt.Println("[warning:length error]")
 	}
 
 	subFile,err = deserializeBlockHead(subHeaderByte)
@@ -88,20 +89,22 @@ Read:
 		return err
 	}
 
-	n, err = unArch.Reader.Read(b)
+	n, err = unArch.File.Read(b)
 	bodyLen = uint32BigEndianBytesToInt(b)
 
 
 
-	file, err = os.Create(fmt.Sprintf("[%d]-%s", unArch.CurrentTask, subFile.FileName))
+	file, err = os.Create(fmt.Sprintf("[%d]-%s", index, subFile.FileName))
 	if err != nil {
-		return nil
+
+	} else {
+		rn, err := io.CopyN(file, unArch.File, subFile.Size)
+		if err != nil || rn != subFile.Size || bodyLen!=int(rn) {
+			return FileError
+		}
+		file.Close()
 	}
-	rn, err := io.CopyN(file, unArch.Reader, subFile.Size)
-	if err != nil || rn != subFile.Size || bodyLen!=int(rn) {
-		return FileError
-	}
-	file.Close()
+
 	goto Read
 
 }
@@ -126,7 +129,7 @@ func (unArch *UnArchiver) parseHead(head []byte) (f *File, err error) {
 	fileName := string(head[cursor : cursor+fileNameSize])
 
 	if len(fileName) == 0 {
-		fileName = fmt.Sprintf("file%d", unArch.CurrentTask)
+		fileName = fmt.Sprintf("file-%d", unArch.CurrentTask)
 	}
 	cursor += fileNameSize
 	pathSize := uint32BigEndianBytesToInt(head[cursor : cursor+4])
@@ -136,7 +139,7 @@ func (unArch *UnArchiver) parseHead(head []byte) (f *File, err error) {
 
 	f = &File{
 		Size:     int64(fileSize),
-		Path:     path,
+		FilePath:     path,
 		FileName: fileName,
 	}
 
@@ -145,7 +148,7 @@ func (unArch *UnArchiver) parseHead(head []byte) (f *File, err error) {
 
 func (unArch *UnArchiver) readFileHead() error {
 	b := make([]byte, FileHeadSize)
-	n, err := unArch.Reader.Read(b)
+	n, err := unArch.File.Read(b)
 	if n != FileHeadSize || err != nil {
 		return FileError
 	}

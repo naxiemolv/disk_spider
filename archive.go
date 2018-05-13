@@ -5,6 +5,7 @@ import (
 	"os"
 	"errors"
 	"io"
+	"fmt"
 )
 
 var (
@@ -91,20 +92,26 @@ func (arch *Archiver) Archive(file *File) error {
 	file.CurrentTask = arch.CurrentTask
 	file.EncrypyType = arch.EncryptType
 
-	// Index
 
 	blockHead, err := file.serializeBlockHead()
+
 	if err != nil {
 		return err
 	}
-	arch.Writer.Write(blockHead)
+	nn,err:= arch.Writer.Write(blockHead)
+	if err != nil || nn!=len(blockHead) {
+		fmt.Printf(err.Error())
+	}
 
 	bodyLen := bigEndianPack(uint32(file.Size))
 
 	// body len
 	arch.Writer.Write(bodyLen)
-	arch.Writer.Flush()
-	src, err := os.Open(file.Path)
+	err= arch.Writer.Flush()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	src, err := os.Open(file.FilePath)
 	if err != nil {
 		return err
 	}

@@ -10,7 +10,6 @@ var verbose = true
 func main() {
 
 	parseCommandLine()
-
 	r,_ := disk_spider.NewUnArchiver("arc.x")
 	r.UnArchive()
 

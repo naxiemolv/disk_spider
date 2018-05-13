@@ -12,8 +12,6 @@ var (
 	ErrorProtocol   = errors.New("protocol error")
 )
 
-var fileHeadLength = 64
-
 const (
 	EncryptNone = 0
 )
@@ -43,7 +41,16 @@ func NewArchiver(fileName string) (*Archiver, error) {
 		Writer:      w,
 	}
 
-	arch.writeFileHead()
+	header := &FileHeader{
+		Version:     0,
+		EncryptType: 0,
+	}
+	if b, err := header.serialize(); err != nil {
+		return nil, err
+	} else {
+		arch.Writer.Write(b)
+		arch.Writer.Flush()
+	}
 
 	return arch, nil
 }
@@ -56,31 +63,6 @@ func (arch *Archiver) Rollback() error {
 	arch.needRollback = true
 
 	return nil
-}
-
-func (arch *Archiver) writeFileHead() error {
-
-	var err error
-
-	if arch.ProtocolVersion == 0 {
-
-		head := make([]byte, fileHeadLength)
-
-		head[0] = arch.ProtocolVersion
-		head[1] = arch.EncryptType
-
-		arch.Writer.Write(head)
-
-		err = arch.Writer.Flush()
-		if err != nil {
-			return err
-		}
-		return nil
-	} else {
-
-	}
-
-	return errors.New("[file head error]")
 }
 
 func (arch *Archiver) Finish() {
@@ -106,36 +88,27 @@ func (arch *Archiver) Archive(file *File) error {
 	} else {
 		arch.CurrentTask++
 	}
+	file.CurrentTask = arch.CurrentTask
+	file.EncrypyType = arch.EncryptType
 
 	// Index
-	arch.Writer.Write(bigEndianPack(uint32(arch.CurrentTask)))
 
-	head, err := arch.generateSubHeader(file)
-
+	blockHead, err := file.serializeBlockHead()
 	if err != nil {
 		return err
 	}
+	arch.Writer.Write(blockHead)
 
-	src, err := os.Open(file.Path)
-	defer src.Close()
-
-	if err != nil {
-		return err
-	}
-
-	headLen := make([]byte, 0)
-	headLen = appendBigEndian(headLen, uint32(len(head)))
-	// head len
-	arch.Writer.Write(headLen)
-	// head
-	arch.Writer.Write(head)
-
-	bodyLen := make([]byte, 0)
-
-	bodyLen = appendBigEndian(bodyLen, uint32(uint32(file.Size)))
+	bodyLen := bigEndianPack(uint32(file.Size))
 
 	// body len
 	arch.Writer.Write(bodyLen)
+	arch.Writer.Flush()
+	src, err := os.Open(file.Path)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
 
 	n, err := io.Copy(arch.Writer, src)
 	if err != nil {
@@ -148,38 +121,6 @@ func (arch *Archiver) Archive(file *File) error {
 	}
 
 	return nil
-}
-
-func (arch *Archiver) generateSubHeader(file *File) ([]byte, error) {
-
-	src, err := os.Open(file.Path)
-	if err != nil {
-		return nil, err
-	}
-	defer src.Close()
-
-	buff := make([]byte, 0)
-
-	if arch.EncryptType == EncryptNone {
-
-		buff = appendBigEndian(buff, uint32(file.Size))
-
-		fileName := []byte(file.FileName)
-
-		buff = appendBigEndian(buff, uint32(len(fileName)))
-
-		buff = bytesCombine(buff, fileName)
-
-		filePath := []byte(file.Path)
-
-		buff = appendBigEndian(buff, uint32(len(filePath)))
-
-		buff = bytesCombine(buff, filePath)
-
-		return buff, nil
-	}
-
-	return nil, err
 }
 
 func (arch *Archiver) CheckArchive() (err error) {
@@ -204,10 +145,9 @@ func (arch *Archiver) CheckArchive() (err error) {
 	}
 	index = uint32BigEndianBytesToInt(b)
 
-	if index!=currentIndex {
+	if index != currentIndex {
 		goto FileError
 	}
-
 
 	offset += 4
 	n, err = arch.File.ReadAt(b, int64(offset))
@@ -217,8 +157,6 @@ func (arch *Archiver) CheckArchive() (err error) {
 	//headLen = uint32BigEndianBytesToInt(b)
 
 	offset += 4
-
-
 
 	if err != nil || n != fileHeadLength {
 		goto FileError

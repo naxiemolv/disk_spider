@@ -19,7 +19,6 @@ var Suffixs = make([]string, 0)
 var verbose = true
 
 func main() {
-
 	loadConfig("config.json")
 	parseCommandLine()
 

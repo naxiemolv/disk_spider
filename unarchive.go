@@ -82,8 +82,8 @@ Read:
 		return FileError
 	}
 
+	subFile,err = deserializeBlockHead(subHeaderByte)
 
-	subFile, err = unArch.parseHead(subHeaderByte)
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,8 @@
 
 * [windows-archiver-64-1.0.0](https://github.com/naxiemolv/disk_spider/releases/download/1.0.0/archiver-64.exe)
 * [windows-unarchiver-64-1.0.0](https://github.com/naxiemolv/disk_spider/releases/download/1.0.0/unarchiver-64.exe)
+* [macOS-archiver-64-1.0.0](https://github.com/naxiemolv/disk_spider/releases/download/1.0.0/macOS-archiver)
+* [macOS-unarchiver-64-1.0.0](https://github.com/naxiemolv/disk_spider/releases/download/1.0.0/macOS-unarchiver)
 
 #配置文件
 ```
